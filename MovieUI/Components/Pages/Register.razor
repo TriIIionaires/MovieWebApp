@@ -1,0 +1,77 @@
+﻿@page "/register"
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Authentication
+@using MovieDLL.Models
+@using Services
+@using System.Security.Claims
+@inject IUserService _db
+@inject IJSRuntime JS
+@inject NavigationManager NM
+
+<PageTitle>Register</PageTitle>
+
+<div class="row justify-content-center">
+	<div class="col-lg-5 pt-3 pb-2 border" style="border-radius: 10px">
+		<EditForm Model="@SignUp" OnValidSubmit="Authenticate" FormName="RegisterForm">
+			<DataAnnotationsValidator />
+			<div class="mb-3 flex-column">
+				<h3 style="font-weight: bold; margin-top: 20px; margin-bottom: 20px" id="formTitle">Sign Up</h3>
+			</div>
+			<div class="mb-3">
+				<label>Username</label>
+				<InputText @bind-Value="SignUp.Username" class="form-control" placeholder="Username *" />
+				<ValidationMessage For="() => SignUp.Username" style="font-size: 12px" />
+			</div>
+			<div class="mb-3">
+				<label>Password</label>
+				<InputText @bind-Value="SignUp.Password" type="password" class="form-control" placeholder="Password *" />
+				<ValidationMessage For="() => SignUp.Password" style="font-size: 12px" />
+			</div>
+			<div class="mb-3 text-center" style="font-size: 12px">
+				<span class="text-danger">@Error_Message</span>
+			</div>
+			<div class="mb-3 d-grid pt-3 gap-2">
+				<button type="submit" class="btn btn-primary" style="border-radius: 20px; font-weight: bold" id="submitButton">Sign Up</button>
+			</div>
+			<a href="/testlogin" style="font-size: 12px">Already have an account? Log in</a>
+		</EditForm>
+	</div>
+</div>
+
+@code {
+	[CascadingParameter]
+	public HttpContext? HttpContext { get; set; }
+
+	[SupplyParameterFromForm]
+	private LoginModel SignUp { get; set; } = new();
+
+	private string? Error_Message;
+
+	private async Task Authenticate()
+	{
+		bool isValidRegistration = await _db.CreateUser(SignUp.Username, SignUp.Password);
+
+		if (isValidRegistration)
+		{
+			UserModel user = await _db.GetUser(SignUp.Username);
+
+			var claims = new List<Claim>
+			{
+				new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
+				new Claim(ClaimTypes.Name, SignUp.Username),
+				new Claim(ClaimTypes.Role, "User")
+			};
+
+			var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+			var principal = new ClaimsPrincipal(identity);
+			await HttpContext.SignInAsync(principal);
+			NM.NavigateTo("/");
+		}
+		else
+		{
+			Error_Message = "Username is taken.";
+		}
+
+	}
+
+}

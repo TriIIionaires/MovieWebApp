@@ -1,0 +1,127 @@
+﻿@page "/login"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Authentication
+@using MovieDLL.Models
+@using Services
+@using System.Security.Claims
+@inject IUserService _db
+@inject IJSRuntime JS
+@inject NavigationManager NM
+
+<PageTitle>Login</PageTitle>
+
+<h3>Login</h3>
+
+<div class="mb-3" style="display: inline-flex; align-items: baseline; margin: 0 !important">
+	<label for="inputUsername" style="border-radius: .25rem; float: left; margin-right: 15px" class="form-label">Username</label>
+	<p style="visibility: hidden; float: left; font-size: 12px; color: #FF4F40; margin-bottom: 0" id="InvalidLoginMessage">Username or password is incorrect.</p>
+</div>
+
+<div class="mb-3">
+	<input type="text" @bind="Username" class="form-control" id="inputUsername" />
+</div>
+
+<div class="mb-3">
+	<label for="inputPassword" class="form-label">Password</label>
+	<input type="text" @bind="Password" class="form-control" id="inputPassword" />
+</div>
+
+<button class="btn btn-primary" @onclick="ValidateUser">Login</button>
+
+<h3 style="margin-top: 50px">Sign Up</h3>
+
+<div class="mb-3" style="display: inline-flex; align-items: baseline; margin: 0 !important">
+	<label for="inputCreateUsername" class="form-label" style="margin-right: 15px">Username</label>
+	<p style="visibility: hidden; float: left; font-size: 12px; color: #FF4F40; margin-bottom: 0" id="InvalidCreateMessage">Username is taken.</p>
+</div>
+
+<div class="mb-3">
+	<input type="text" @bind="createUsername" class="form-control" id="inputCreateUsername" />
+</div>
+
+<div class="mb-3">
+	<label for="inputCreatePassword" class="form-label">Password</label>
+	<input type="text" @bind="createPassword" class="form-control" id="inputCreatePassword" />
+</div>
+
+<button class="btn btn-primary" @onclick="CreateUser">Sign Up</button>
+
+<script>
+
+	function LoginUser(isValid) {
+		if (isValid == false) {
+			document.getElementById("InvalidLoginMessage").style.visibility = "visible";
+		} else {
+			document.getElementById("InvalidLoginMessage").style.visibility = "hidden";
+		}
+	}
+
+	function CreateUser(isValid) {
+		if (isValid == false) {
+			document.getElementById("InvalidCreateMessage").style.visibility = "visible";
+		} else {
+			document.getElementById("InvalidCreateMessage").style.visibility = "hidden";
+		}
+	}
+
+	function ClearFields(field1, field2) {
+		document.getElementById(field1).value = "";
+		document.getElementById(field2).value = "";
+	}
+
+</script>
+
+@code {
+	[CascadingParameter]
+	public HttpContext? HttpContext { get; set; }
+
+	private string Username { get; set; }
+	private string Password { get; set; }
+
+	private string createUsername { get; set; }
+	private string createPassword { get; set; }
+
+	private bool isValidLogin { get; set; } = false;
+	private bool isValidCreate { get; set; } = false;
+
+	UserModel user = new UserModel();
+
+	private async Task ValidateUser()
+	{
+		isValidLogin = await _db.ValidateUser(Username, Password);
+		await JS.InvokeVoidAsync("LoginUser", isValidLogin);
+		StateHasChanged();
+
+		if (isValidLogin)
+		{
+			var claims = new List<Claim>
+			{
+				new Claim(ClaimTypes.Name, Username),
+				new Claim(ClaimTypes.Role, "User")
+			};
+
+			var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+			var principal = new ClaimsPrincipal(identity);
+			await HttpContext.SignInAsync(principal);
+			NM.NavigateTo("/");
+		}
+
+	}
+
+	private async Task CreateUser()
+	{
+		if (createUsername != null && !createUsername.Equals(""))
+		{
+			isValidCreate = await _db.CreateUser(createUsername, createPassword);
+		}
+		else
+		{
+			return;
+		}
+
+		if (isValidCreate) await JS.InvokeVoidAsync("ClearFields", "inputCreateUsername", "inputCreatePassword");
+		await JS.InvokeVoidAsync("CreateUser", isValidCreate);
+	}
+
+}

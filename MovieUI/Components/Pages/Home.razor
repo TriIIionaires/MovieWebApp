@@ -1,0 +1,87 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using MovieDLL.Models
+@using Services
+@inject IMovieService _db
+
+<PageTitle>Movie Information</PageTitle>
+
+<div class="mb-3">
+	<label for="inputValue" class="form-label">Search for Movie_ID:</label>
+	<input type="number" @bind="InputValue" class="form-control" id="inputValue"/>
+</div>
+
+<button class="btn btn-primary" @onclick="LoadMovie">Load Movie</button>
+
+@if (movie == null)
+{
+	<p>Loading...</p>
+} else {
+	<h1>@movie.Title</h1>
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-md-4">
+				<img src="@movie.PosterURL" width="300"/>
+			</div>
+		</div>
+	</div>
+}
+
+<div class="card" style="width: 18rem">
+	<div class="card-body">
+		<h5 class="card-title">@movie.Title</h5>
+		<img class="card-img-top" src="@movie.PosterURL" />
+		<p class="card-text">@movie.Description</p>
+		<div class="card-footer">
+			Runtime: @movie.RunTime, Rating: @movie.Rating
+		</div>
+	</div>
+</div>
+
+<table class="table table-dark">
+	<thead>
+		<tr>
+			<th scope="col">Movie ID</th>
+			<th scope="col">Title</th>
+			<th scope="col">Runtime</th>
+			<th scope="col">Rating</th>
+		</tr>
+	</thead>
+
+	<tbody>
+		
+		@foreach (MovieModel movie in movies)
+		{
+			<tr>
+				<td>@movie.Movie_ID</td>
+				<td>@movie.Title</td>
+				<td>@movie.RunTime</td>
+				<td>@movie.Rating</td>
+			</tr>
+		}
+
+	</tbody>
+</table>
+
+@code{
+
+	private int InputValue { get; set; }
+
+	MovieModel movie = new MovieModel();
+	List<MovieModel> movies = new List<MovieModel>();
+
+	protected override async Task OnInitializedAsync()
+	{
+		movie = await _db.GetMovieByMovieID(862);
+		movie.PosterURL = "http://image.tmdb.org/t/p/w185/" + movie.PosterURL;
+
+		movies = await _db.GetMoviesByTitle("toy story", 0, 20);
+	}
+
+	private async void LoadMovie()
+	{
+		movie = await _db.GetMovieByMovieID(InputValue);
+		StateHasChanged();
+	}
+
+}

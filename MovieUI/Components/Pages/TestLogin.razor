@@ -1,0 +1,76 @@
+﻿@page "/testlogin"
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Authentication
+@using MovieDLL.Models
+@using Services
+@using System.Security.Claims
+@inject IUserService _db
+@inject IJSRuntime JS
+@inject NavigationManager NM
+
+<PageTitle>Login</PageTitle>
+
+<div class="row justify-content-center">
+	<div class="col-lg-5 pt-3 pb-2 border" style="border-radius: 10px">
+		<EditForm Model="@Login" OnValidSubmit="Authenticate" FormName="LoginForm">
+			<DataAnnotationsValidator/>
+			<div class="mb-3 flex-column">
+				<h3 style="font-weight: bold; margin-top: 20px; margin-bottom: 20px" id="formTitle">Login</h3>
+			</div>
+			<div class="mb-3">
+				<label>Username</label>
+				<InputText @bind-Value="Login.Username" class="form-control" placeholder="Username *"/>
+				<ValidationMessage For="() => Login.Username" style="font-size: 12px" />
+			</div>
+			<div class="mb-3">
+				<label>Password</label>
+				<InputText @bind-Value="Login.Password" type="password" class="form-control" placeholder="Password *" />
+				<ValidationMessage For="() => Login.Password" style="font-size: 12px"/>
+			</div>
+			<div class="mb-3" style="font-size: 12px">
+				<span class="text-danger">@Error_Message</span>
+			</div>
+			<div class="mb-3 d-grid pt-3 gap-2">
+				<button type="submit" class="btn btn-primary" style="border-radius: 20px; font-weight: bold" id="submitButton">Login</button>
+			</div>
+			<a href="/register" style="font-size: 12px">Don't have an account? Sign Up</a>
+		</EditForm>
+	</div>
+</div>
+
+@code {
+	[CascadingParameter]
+	public HttpContext? HttpContext { get; set; }
+
+	[SupplyParameterFromForm]
+	private LoginModel Login { get; set; } = new();
+
+	private string? Error_Message;
+
+	private async Task Authenticate()
+	{
+		bool isValidLogin = await _db.ValidateUser(Login.Username, Login.Password);
+
+		if (isValidLogin)
+		{
+			UserModel user = await _db.GetUser(Login.Username);
+
+			var claims = new List<Claim>
+			{
+				new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
+				new Claim(ClaimTypes.Name, Login.Username),
+				new Claim(ClaimTypes.Role, "User")
+			};
+
+			var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+			var principal = new ClaimsPrincipal(identity);
+			await HttpContext.SignInAsync(principal);
+			NM.NavigateTo("/");
+		} else
+		{
+			Error_Message = "Username or password is incorrect.";
+		}
+
+	}
+
+}

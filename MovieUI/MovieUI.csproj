@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML" Version="4.0.0" />
+    <PackageReference Include="Microsoft.ML.Recommender" Version="0.22.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="MovieDLL">
+      <HintPath>..\MovieDLL\bin\Debug\net8.0\MovieDLL.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

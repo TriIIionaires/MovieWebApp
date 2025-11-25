@@ -1,0 +1,10 @@
+﻿.box {
+    border: 1px solid black;
+    border-radius: 20px;
+    padding: 5px 10px;
+    inline-size: max-content;
+}
+
+#submitButton:focus, #submitButton:active:focus, #submitButton-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+    box-shadow: none !important
+}
