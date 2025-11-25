@@ -1,4 +1,4 @@
-# 🎬 MovieWebApp
+# 🎬 Movie Web Application
 A full-stack web app built with the .NET Framework that allows users to interact with movie data. This project was built for learning purposes to understand the basics of system design and full-stack development. The project uses a Kaggle dataset of movies (36,000+ movies) as a sample with the SQL file being provided. The database was hosted locally using MAMP that provides a MySQL server to test functionality.
 
 ## Technologies
