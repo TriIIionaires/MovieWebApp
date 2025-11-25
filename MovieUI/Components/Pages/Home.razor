@@ -4,84 +4,77 @@
 @using Services
 @inject IMovieService _db
 
-<PageTitle>Movie Information</PageTitle>
+<PageTitle>Home</PageTitle>
 
-<div class="mb-3">
-	<label for="inputValue" class="form-label">Search for Movie_ID:</label>
-	<input type="number" @bind="InputValue" class="form-control" id="inputValue"/>
-</div>
+<h1>Popular Movies</h1>
 
-<button class="btn btn-primary" @onclick="LoadMovie">Load Movie</button>
-
-@if (movie == null)
+@if (movies != null)
 {
-	<p>Loading...</p>
-} else {
-	<h1>@movie.Title</h1>
-	<div class="container-fluid">
-		<div class="row">
-			<div class="col-md-4">
-				<img src="@movie.PosterURL" width="300"/>
+	@foreach (MovieModel movie in movies)
+	{
+		<div class="card mt-3 mb-3" style="max-width: 100%; width: 100%">
+			<div class="card-body" style="padding-bottom: 10px">
+				<div class="mb-1" style="display: flex">
+					<h2 class="card-title fw-bold mb-0" style="max-width: 30em; margin-right: 10px">@movie.Title</h2>
+					<div class="wrapper" style="min-width: 114px; max-height: 40px; float: right; line-height: 1; display: inline-block">
+						<img src="https://images.emojiterra.com/twitter/v13.1/512px/2b50.png" style="float: left; margin-right: 7px; max-height: 35px; max-width: 35px" />
+						<div class="mb-0" style="float: left">
+							<div class="mb-0">
+								<span style="font-size: 24px; font-weight: bolder">@movie.Rating</span>
+								<span style="font-size: 16px; vertical-align: baseline">/10</span>
+							</div>
+							<div class="mb-0" style="font-size: 14px">@FormatNumber(movie.Votes) votes</div>
+						</div>
+
+					</div>
+				</div>
+				<div class="mb-1">
+					@movie.MPAA_Rating &nbsp | &nbsp @(movie.RunTime / 60)h @(movie.RunTime % 60)m &nbsp | &nbsp @movie.Release_Date.ToString("dd MMMM yyyy")
+				</div>
+				@if (movie.Genres != null)
+				{
+					<div class="mb-1" style="display: flex">
+						@foreach (GenreModel genre in movie.Genres)
+						{
+							<div style="border: 1px solid black; border-radius: 20px; padding: 5px 10px; inline-size: max-content; margin-right: 0.25rem">
+								@genre.Genre
+							</div>
+						}
+					</div>
+				}
+				<p class="card-text">@movie.Description</p>
 			</div>
 		</div>
-	</div>
+	}
+} 
+else
+{
+	<p>Loading...</p>	
 }
-
-<div class="card" style="width: 18rem">
-	<div class="card-body">
-		<h5 class="card-title">@movie.Title</h5>
-		<img class="card-img-top" src="@movie.PosterURL" />
-		<p class="card-text">@movie.Description</p>
-		<div class="card-footer">
-			Runtime: @movie.RunTime, Rating: @movie.Rating
-		</div>
-	</div>
-</div>
-
-<table class="table table-dark">
-	<thead>
-		<tr>
-			<th scope="col">Movie ID</th>
-			<th scope="col">Title</th>
-			<th scope="col">Runtime</th>
-			<th scope="col">Rating</th>
-		</tr>
-	</thead>
-
-	<tbody>
-		
-		@foreach (MovieModel movie in movies)
-		{
-			<tr>
-				<td>@movie.Movie_ID</td>
-				<td>@movie.Title</td>
-				<td>@movie.RunTime</td>
-				<td>@movie.Rating</td>
-			</tr>
-		}
-
-	</tbody>
-</table>
 
 @code{
 
-	private int InputValue { get; set; }
-
-	MovieModel movie = new MovieModel();
 	List<MovieModel> movies = new List<MovieModel>();
 
 	protected override async Task OnInitializedAsync()
 	{
-		movie = await _db.GetMovieByMovieID(862);
-		movie.PosterURL = "http://image.tmdb.org/t/p/w185/" + movie.PosterURL;
-
-		movies = await _db.GetMoviesByTitle("toy story", 0, 20);
+		movies = await _db.GetMoviesByRating(7, 10, 1000, 10);
+		StateHasChanged();
 	}
 
-	private async void LoadMovie()
+	private static string FormatNumber(long num)
 	{
-		movie = await _db.GetMovieByMovieID(InputValue);
-		StateHasChanged();
+		long i = (long)Math.Pow(10, (int)Math.Max(0, Math.Log10(num) - 2));
+		num = num / i * i;
+
+		if (num >= 1000000000)
+			return (num / 1000000000D).ToString("0.##") + "B";
+		if (num >= 1000000)
+			return (num / 1000000D).ToString("0.##") + "M";
+		if (num >= 1000)
+			return (num / 1000D).ToString("0.##") + "K";
+
+		return num.ToString("#,0");
 	}
 
 }

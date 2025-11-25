@@ -45,7 +45,6 @@ namespace MovieDLL.Data
 			return null;
 		}
 
-		// Sample Code
 		public async Task<List<MovieModel>> ReadByGenreID(int genre_id, int votes, int limit)
         {
             string sql = "SELECT mmd_movie.ID, mmd_movie.Movie_ID, IMDB_ID, Title, Release_Date, RunTime, mmd_ratings.mpaa_rating, Rating, Votes, Tagline, Description, Homepage, PosterURL " +
@@ -62,6 +61,23 @@ namespace MovieDLL.Data
             if (result.Count > 0) return result;
             return null;
         }
+
+        public async Task<List<MovieModel>> ReadByRating(int min, int max, int votes, int limit)
+        {
+			string sql = "SELECT mmd_movie.ID, Movie_ID, IMDB_ID, Title, Release_Date, RunTime, mmd_ratings.mpaa_rating, Rating, Votes, Tagline, Description, Homepage, PosterURL " +
+              "FROM mmd_movie " +
+              "INNER JOIN mmd_ratings ON mmd_movie.MPAA_RatingID = mmd_ratings.mpaa_ratingid " +
+              "WHERE mmd_movie.Rating BETWEEN @min AND @max " +
+              "AND votes > @votes " + 
+              "ORDER BY Rating DESC " +
+              "LIMIT @limit";
+
+			List<MovieModel> result = _db.LoadData<MovieModel, dynamic>(sql, new { min, max, votes, limit });
+
+			if (result.Count > 0) return result;
+			return null;
+
+		}
 
         // Student Code (Jadon, Omar, Gavin, Kevin, Nathan, Angel, Daniel)
         public async Task<List<MovieModel>> ReadByDate(DateTime start, DateTime end, int limit)

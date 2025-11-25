@@ -55,5 +55,20 @@ namespace MovieUI.Services
 				return null;
 			}
 		}
+
+		public async Task<List<MovieModel>> GetMoviesByRating(int min, int max, int votes, int limit)
+		{
+			try
+			{
+				List<MovieModel> movies = await _httpClient.GetFromJsonAsync<List<MovieModel>>($"/api/Movie/min={min}&max={max}&votes={votes}&limit={limit}");
+
+				return movies;
+			} 
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+				return null;
+			}
+		}
     }
 }

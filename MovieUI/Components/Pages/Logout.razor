@@ -11,7 +11,7 @@
 		if (HttpContext.User.Identity.IsAuthenticated)
 		{
 			await HttpContext.SignOutAsync();
-			NM.NavigateTo("/testlogin", true);
+			NM.NavigateTo("/login", true);
 		}
 	}
 }

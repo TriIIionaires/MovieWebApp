@@ -9,7 +9,8 @@ namespace MovieDLL.Data
         void DeleteMovie(int id);
         Task<List<GenreModel>> ReadAllGenres();
         Task<List<MovieModel>> ReadAllMovies();
-        Task<List<MovieModel>> ReadByDate(DateTime start, DateTime end, int limit);
+        Task<List<MovieModel>> ReadByRating(int min, int max, int votes, int limit);
+		Task<List<MovieModel>> ReadByDate(DateTime start, DateTime end, int limit);
         Task<List<MovieModel>> ReadByDescription(string desc, int votes, int limit);
         Task<List<MovieModel>> ReadByGenreID(int genre_id, int votes, int limit);
         Task<MovieModel> ReadByID(int id);

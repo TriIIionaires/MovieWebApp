@@ -1,5 +1,4 @@
 ﻿@page "/login"
-@rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authentication.Cookies
 @using Microsoft.AspNetCore.Authentication
 @using MovieDLL.Models
@@ -11,93 +10,55 @@
 
 <PageTitle>Login</PageTitle>
 
-<h3>Login</h3>
-
-<div class="mb-3" style="display: inline-flex; align-items: baseline; margin: 0 !important">
-	<label for="inputUsername" style="border-radius: .25rem; float: left; margin-right: 15px" class="form-label">Username</label>
-	<p style="visibility: hidden; float: left; font-size: 12px; color: #FF4F40; margin-bottom: 0" id="InvalidLoginMessage">Username or password is incorrect.</p>
+<div class="row d-flex justify-content-center align-items-center" style="height: 75vh">
+	<div class="col-lg-5 pt-3 pb-2 border" style="border-radius: 10px">
+		<EditForm Model="@LoginInfo" OnValidSubmit="Authenticate" FormName="LoginForm">
+			<DataAnnotationsValidator/>
+			<div class="mb-3 flex-column">
+				<h3 style="font-weight: bold; margin-top: 20px; margin-bottom: 20px" id="formTitle">Login</h3>
+			</div>
+			<div class="mb-3">
+				<label>Username</label>
+				<InputText @bind-Value="LoginInfo.Username" class="form-control" placeholder="Username *" />
+				<ValidationMessage For="() => LoginInfo.Username" style="font-size: 12px" />
+			</div>
+			<div class="mb-3">
+				<label>Password</label>
+				<InputText @bind-Value="LoginInfo.Password" type="password" class="form-control" placeholder="Password *" />
+				<ValidationMessage For="() => LoginInfo.Password" style="font-size: 12px" />
+			</div>
+			<div class="mb-3" style="font-size: 12px">
+				<span class="text-danger">@Error_Message</span>
+			</div>
+			<div class="mb-3 d-grid pt-3 gap-2">
+				<button type="submit" class="btn btn-primary" style="border-radius: 20px; font-weight: bold" id="submitButton">Login</button>
+			</div>
+			<a href="/register" style="font-size: 12px">Don't have an account? Sign Up</a>
+		</EditForm>
+	</div>
 </div>
-
-<div class="mb-3">
-	<input type="text" @bind="Username" class="form-control" id="inputUsername" />
-</div>
-
-<div class="mb-3">
-	<label for="inputPassword" class="form-label">Password</label>
-	<input type="text" @bind="Password" class="form-control" id="inputPassword" />
-</div>
-
-<button class="btn btn-primary" @onclick="ValidateUser">Login</button>
-
-<h3 style="margin-top: 50px">Sign Up</h3>
-
-<div class="mb-3" style="display: inline-flex; align-items: baseline; margin: 0 !important">
-	<label for="inputCreateUsername" class="form-label" style="margin-right: 15px">Username</label>
-	<p style="visibility: hidden; float: left; font-size: 12px; color: #FF4F40; margin-bottom: 0" id="InvalidCreateMessage">Username is taken.</p>
-</div>
-
-<div class="mb-3">
-	<input type="text" @bind="createUsername" class="form-control" id="inputCreateUsername" />
-</div>
-
-<div class="mb-3">
-	<label for="inputCreatePassword" class="form-label">Password</label>
-	<input type="text" @bind="createPassword" class="form-control" id="inputCreatePassword" />
-</div>
-
-<button class="btn btn-primary" @onclick="CreateUser">Sign Up</button>
-
-<script>
-
-	function LoginUser(isValid) {
-		if (isValid == false) {
-			document.getElementById("InvalidLoginMessage").style.visibility = "visible";
-		} else {
-			document.getElementById("InvalidLoginMessage").style.visibility = "hidden";
-		}
-	}
-
-	function CreateUser(isValid) {
-		if (isValid == false) {
-			document.getElementById("InvalidCreateMessage").style.visibility = "visible";
-		} else {
-			document.getElementById("InvalidCreateMessage").style.visibility = "hidden";
-		}
-	}
-
-	function ClearFields(field1, field2) {
-		document.getElementById(field1).value = "";
-		document.getElementById(field2).value = "";
-	}
-
-</script>
 
 @code {
 	[CascadingParameter]
 	public HttpContext? HttpContext { get; set; }
 
-	private string Username { get; set; }
-	private string Password { get; set; }
+	[SupplyParameterFromForm]
+	private LoginModel LoginInfo { get; set; } = new();
 
-	private string createUsername { get; set; }
-	private string createPassword { get; set; }
+	private string? Error_Message;
 
-	private bool isValidLogin { get; set; } = false;
-	private bool isValidCreate { get; set; } = false;
-
-	UserModel user = new UserModel();
-
-	private async Task ValidateUser()
+	private async Task Authenticate()
 	{
-		isValidLogin = await _db.ValidateUser(Username, Password);
-		await JS.InvokeVoidAsync("LoginUser", isValidLogin);
-		StateHasChanged();
+		bool isValidLogin = await _db.ValidateUser(LoginInfo.Username, LoginInfo.Password);
 
 		if (isValidLogin)
 		{
+			UserModel user = await _db.GetUser(LoginInfo.Username);
+
 			var claims = new List<Claim>
 			{
-				new Claim(ClaimTypes.Name, Username),
+				new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
+				new Claim(ClaimTypes.Name, LoginInfo.Username),
 				new Claim(ClaimTypes.Role, "User")
 			};
 
@@ -105,23 +66,11 @@
 			var principal = new ClaimsPrincipal(identity);
 			await HttpContext.SignInAsync(principal);
 			NM.NavigateTo("/");
-		}
-
-	}
-
-	private async Task CreateUser()
-	{
-		if (createUsername != null && !createUsername.Equals(""))
+		} else
 		{
-			isValidCreate = await _db.CreateUser(createUsername, createPassword);
-		}
-		else
-		{
-			return;
+			Error_Message = "Username or password is incorrect.";
 		}
 
-		if (isValidCreate) await JS.InvokeVoidAsync("ClearFields", "inputCreateUsername", "inputCreatePassword");
-		await JS.InvokeVoidAsync("CreateUser", isValidCreate);
 	}
 
 }

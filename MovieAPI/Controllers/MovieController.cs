@@ -60,6 +60,7 @@ namespace MovieAPI.Controllers
             return result;
         }
 
+        /*
         [HttpGet("min={shortest}&max={longest}&votes={votes}&limit={limit}")]
         public async Task<List<MovieModel>> ReadByRuntime(int shortest, int longest, int votes, int limit)
         {
@@ -73,6 +74,7 @@ namespace MovieAPI.Controllers
 
             return result;
         }
+        */
 
         [HttpGet("startDate={start}&endDate={end}&limit={limit}")]
         public async Task<List<MovieModel>> ReadByDate(DateTime start, DateTime end, int limit)
@@ -101,6 +103,21 @@ namespace MovieAPI.Controllers
 
             return result;
         }
+
+        [HttpGet("min={min}&max={max}&votes={votes}&limit={limit}")]
+        public async Task<List<MovieModel>> ReadByRating(int min, int max, int votes, int limit)
+        {
+            List<MovieModel> result = await _db.ReadByRating(min, max, votes, limit);
+
+			foreach (MovieModel movie in result)
+			{
+				List<GenreModel> genres = _db.ReadMovieGenres(movie.Movie_ID);
+				movie.Genres = genres;
+			}
+
+			return result;
+
+		}
 
         [HttpGet("genres")]
         public async Task<List<GenreModel>> ReadAllGenres()
